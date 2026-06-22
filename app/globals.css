@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-canvas: oklch(96.5% 0.006 245);
+  --color-shelf: oklch(99.2% 0.003 245);
+  --color-panel: oklch(99.2% 0.003 245);
+  --color-panel-hover: oklch(97.6% 0.004 245);
+  --color-hi: oklch(17% 0.014 252);
+  --color-mid: oklch(33% 0.01 252);
+  --color-lo: oklch(52% 0.009 252);
+  --color-brand: oklch(84% 0.14 83);
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+}
+
+html {
+  min-height: 100%;
+}
+
+body {
+  min-height: 100%;
+  background: oklch(96.5% 0.006 245);
+  color: oklch(17% 0.014 252);
+  font-family: var(--font-sans);
+  font-optical-sizing: auto;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  text-wrap: balance;
+}
