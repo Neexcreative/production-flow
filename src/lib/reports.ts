@@ -4,6 +4,7 @@ import type {
   Priority,
   ProductionStage,
 } from "@/types/order";
+import { formatDueDisplay, parseISODate } from "@/utils/date";
 
 export type ReportFilters = {
   dateFrom: string;
@@ -71,44 +72,14 @@ export function getReportDate(order: JobOrder) {
   return parseIsoDate(order.createdAt) ?? parseIsoDate(order.updatedAt);
 }
 
-export function parseDueText(value?: string | null, now = new Date()) {
-  const dueText = value?.trim();
-
-  if (!dueText) {
-    return null;
-  }
-
-  const normalized = dueText.toLowerCase();
-
-  if (normalized === "today") {
-    return endOfDay(now);
-  }
-
-  if (normalized === "tomorrow") {
-    const tomorrow = new Date(now);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    return endOfDay(tomorrow);
-  }
-
-  if (normalized === "pending" || normalized === "done") {
-    return null;
-  }
-
-  const parsedWithYear = new Date(`${dueText} ${now.getFullYear()}`);
-  if (!Number.isNaN(parsedWithYear.getTime())) {
-    return endOfDay(parsedWithYear);
-  }
-
-  const directParse = new Date(dueText);
-  return Number.isNaN(directParse.getTime()) ? null : endOfDay(directParse);
-}
-
 export function isOverdue(order: JobOrder, now = new Date()) {
   if (order.status === "Done") {
     return false;
   }
 
-  const dueDate = parseDueText(order.due, now);
+  const dueDate =
+    parseISODate(order.dueDate ?? null) ??
+    (order.dueText === "Today" ? endOfDay(now) : null);
 
   if (!dueDate) {
     return false;
@@ -193,7 +164,7 @@ export function buildReportRows(orders: JobOrder[]): ReportRow[] {
     priority: order.priority,
     jobType: order.jobType,
     productionStage: order.productionStage,
-    dueDate: order.due,
+    dueDate: formatDueDisplay(order.dueDate, order.dueText) || "Not set",
     completedDate: formatReportDate(order.completedAt) || "",
   }));
 }

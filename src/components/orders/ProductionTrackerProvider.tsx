@@ -191,39 +191,6 @@ function parseNullableNumber(value?: string) {
   return Number.isFinite(parsedValue) ? parsedValue : null;
 }
 
-function normalizeDueValue(value: string) {
-  const trimmedValue = value.trim();
-
-  if (!trimmedValue) {
-    return { dueDate: null, dueText: null };
-  }
-
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
-    const parsedDate = new Date(`${trimmedValue}T00:00:00Z`);
-
-    if (!Number.isNaN(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === trimmedValue) {
-      return { dueDate: trimmedValue, dueText: null };
-    }
-  }
-
-  const slashDateMatch = trimmedValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-
-  if (slashDateMatch) {
-    const [, day, month, year] = slashDateMatch;
-    const normalizedDate = `${year}-${month}-${day}`;
-    const parsedDate = new Date(`${normalizedDate}T00:00:00Z`);
-
-    if (
-      !Number.isNaN(parsedDate.getTime()) &&
-      parsedDate.toISOString().slice(0, 10) === normalizedDate
-    ) {
-      return { dueDate: normalizedDate, dueText: null };
-    }
-  }
-
-  return { dueDate: null, dueText: trimmedValue };
-}
-
 function buildReferencePayload(referenceImage?: string) {
   const trimmedReference = referenceImage?.trim() ?? "";
 
@@ -261,7 +228,6 @@ function buildSupabaseJobPayload(args: {
   isDone: boolean;
   now: string;
 }): SupabaseJobPayload {
-  const { dueDate, dueText } = normalizeDueValue(args.builtOrder.due);
   const { referenceUrl, referenceAttachmentUrl } = buildReferencePayload(
     args.builtOrder.referenceAttachmentUrl ?? args.builtOrder.referenceUrl
   );
@@ -274,8 +240,8 @@ function buildSupabaseJobPayload(args: {
     production_stage_id: args.productionStageId,
     status_id: args.statusId,
     priority_id: args.priorityId,
-    due_date: dueDate,
-    due_text: dueText || null,
+    due_date: args.builtOrder.dueDate ?? null,
+    due_text: args.builtOrder.dueText ?? null,
     item_project_asset: args.builtOrder.itemProjectAsset ?? null,
     requested_by_id: args.requestedById,
     resource_id: args.resourceId,

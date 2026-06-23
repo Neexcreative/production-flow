@@ -15,6 +15,7 @@ import {
   type ProductionStage,
   type StatusOption,
 } from "@/types/order";
+import { DatePickerField } from "@/components/ui/DatePickerField";
 
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 const ADD_NEW_CLIENT_VALUE = "__add_new_client__";
@@ -50,7 +51,8 @@ export const EMPTY_ORDER_FORM: OrderFormValues = {
   productionStage: "Artwork",
   status: "New",
   priority: "Normal",
-  due: "",
+  dueDate: "",
+  dueText: "",
   itemProjectAsset: "",
   resource: "",
   quantity: "",
@@ -152,6 +154,7 @@ export function OrderFormModal({
   const [newRequestedByName, setNewRequestedByName] = useState("");
   const [requestedByError, setRequestedByError] = useState("");
   const [waitingReasonError, setWaitingReasonError] = useState("");
+  const [dueError, setDueError] = useState("");
   const [fileError, setFileError] = useState("");
 
   function handleChange<K extends keyof OrderFormValues>(
@@ -169,6 +172,10 @@ export function OrderFormModal({
 
     if (field === "waitingReason") {
       setWaitingReasonError("");
+    }
+
+    if (field === "dueDate" || field === "dueText") {
+      setDueError("");
     }
   }
 
@@ -336,6 +343,11 @@ export function OrderFormModal({
       return;
     }
 
+    if (!nextValues.dueDate.trim() && !nextValues.dueText.trim()) {
+      setDueError("Please select an exact date or choose Today, Pending or Done.");
+      return;
+    }
+
     nextValues = {
       ...nextValues,
       referenceAttachmentUrl: nextValues.referenceAttachmentUrl,
@@ -495,16 +507,16 @@ export function OrderFormModal({
                 </select>
               </label>
 
-              <label className="space-y-1.5">
-                <span className={labelTextClass}>Due Date / Due Text</span>
-                <input
-                  required
-                  value={formValues.due}
-                  onChange={(event) => handleChange("due", event.target.value)}
-                  className={inputClass}
-                  placeholder="29 May / Today / Pending"
-                />
-              </label>
+              <DatePickerField
+                label="Due Date / Due Text"
+                value={formValues.dueDate || null}
+                dueText={formValues.dueText || null}
+                error={dueError}
+                onChange={({ dueDate, dueText }) => {
+                  handleChange("dueDate", dueDate ?? "");
+                  handleChange("dueText", dueText ?? "");
+                }}
+              />
 
               <label className="space-y-1.5">
                 <span className={labelTextClass}>Item / Project / Asset</span>

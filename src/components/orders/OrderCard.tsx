@@ -1,5 +1,6 @@
 import type { JobOrder, OrderStatus, StatusOption } from "@/types/order";
 import { generateJobPdf } from "@/utils/generateJobPdf";
+import { formatDueDisplay } from "@/utils/date";
 
 function getPriorityBadge(priority: string) {
   if (priority === "High") {
@@ -78,6 +79,7 @@ export function OrderCard({
   }
 
   const isWaiting = order.status === "Waiting";
+  const dueDisplay = formatDueDisplay(order.dueDate, order.dueText) || "Not set";
 
   return (
     <article
@@ -120,7 +122,7 @@ export function OrderCard({
           </p>
         ) : null}
         <p>
-          <span className="font-semibold text-slate-500">Due:</span> {order.due}
+          <span className="font-semibold text-slate-500">Due:</span> {dueDisplay}
         </p>
         {order.resource ? (
           <p>

@@ -3,6 +3,7 @@
 import { formatDateTime } from "@/lib/productionTracker";
 import type { JobOrder, OrderStatus, StatusOption } from "@/types/order";
 import { generateJobPdf } from "@/utils/generateJobPdf";
+import { formatDueDisplay } from "@/utils/date";
 
 type OrderListViewProps = {
   orders: JobOrder[];
@@ -65,7 +66,11 @@ export function OrderListView({
                 </td>
               </tr>
             ) : (
-              orders.map((order) => (
+              orders.map((order) => {
+                const dueDisplay =
+                  formatDueDisplay(order.dueDate, order.dueText) || "Not set";
+
+                return (
                 <tr key={order.id} className="border-t border-slate-200 align-top">
                   <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-600">
                     {order.id}
@@ -105,7 +110,7 @@ export function OrderListView({
                   <td className="px-4 py-3 text-slate-700">{order.priority}</td>
                   <td className="px-4 py-3 text-slate-700">{order.jobType}</td>
                   <td className="px-4 py-3 text-slate-700">{order.productionStage}</td>
-                  <td className="px-4 py-3 text-slate-700">{order.due}</td>
+                  <td className="px-4 py-3 text-slate-700">{dueDisplay}</td>
                   <td className="px-4 py-3 text-slate-700">
                     {formatDateTime(order.updatedAt) || "Not available"}
                   </td>
@@ -143,7 +148,8 @@ export function OrderListView({
                     </div>
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

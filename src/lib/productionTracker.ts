@@ -20,6 +20,7 @@ import {
   type Priority,
   type ProductionStage,
 } from "@/types/order";
+import { formatDueDisplay, normalizeDueDateInput } from "@/utils/date";
 
 export const ORDERS_STORAGE_KEY = "productionFlowJobs";
 export const HISTORY_STORAGE_KEY = "productionFlowHistory";
@@ -66,6 +67,7 @@ export type ViewMode = "board" | "list";
 
 type LegacyOrder = Partial<JobOrder> & {
   service?: string;
+  due?: string;
   vehicleItem?: string;
   material?: string;
   printQuantity?: string;
@@ -249,6 +251,11 @@ function migrateOrder(order: LegacyOrder, fallbackCreatedAt: string): JobOrder {
   const waitingReason = resolveText(order.waitingReason);
   const createdAt = resolveText(order.createdAt) || fallbackCreatedAt;
   const updatedAt = resolveText(order.updatedAt) || createdAt;
+  const { dueDate, dueText } = normalizeDueDateInput({
+    dueDate: order.dueDate,
+    dueText: order.dueText,
+    due: order.due,
+  });
   const completedAt =
     status === "Done"
       ? resolveText(order.completedAt) || updatedAt
@@ -265,7 +272,8 @@ function migrateOrder(order: LegacyOrder, fallbackCreatedAt: string): JobOrder {
       PRODUCTION_STAGES.includes(productionStage) ? productionStage : "Artwork",
     status,
     priority: resolvePriority(order.priority),
-    due: resolveText(order.due) || "Pending",
+    dueDate,
+    dueText,
     itemProjectAsset: resolveText(order.itemProjectAsset ?? order.vehicleItem) || undefined,
     resource: resolveText(order.resource ?? order.material) || undefined,
     quantity: resolveText(order.quantity) || undefined,
@@ -538,7 +546,8 @@ export function buildOrderFormValues(order?: JobOrder): OrderFormValues {
     productionStage: order?.productionStage ?? "Artwork",
     status: order?.status ?? "New",
     priority: order?.priority ?? "Normal",
-    due: order?.due ?? "",
+    dueDate: order?.dueDate ?? "",
+    dueText: order?.dueText ?? "",
     itemProjectAsset: order?.itemProjectAsset ?? "",
     resource: order?.resource ?? "",
     quantity: order?.quantity ?? "",
@@ -580,7 +589,8 @@ export function sanitizeFormValues(values: OrderFormValues) {
     title: values.title.trim(),
     client: values.client.trim(),
     jobType: values.jobType.trim(),
-    due: values.due.trim(),
+    dueDate: values.dueDate.trim(),
+    dueText: values.dueText.trim(),
     itemProjectAsset: values.itemProjectAsset.trim(),
     resource: values.resource.trim(),
     quantity: values.quantity.trim(),
@@ -619,7 +629,8 @@ export function buildOrderFromForm(
     productionStage: sanitizedValues.productionStage,
     status: nextStatus,
     priority: sanitizedValues.priority,
-    due: sanitizedValues.due,
+    dueDate: sanitizedValues.dueDate || null,
+    dueText: sanitizedValues.dueText || null,
     itemProjectAsset: sanitizedValues.itemProjectAsset || undefined,
     resource: sanitizedValues.resource || undefined,
     quantity: sanitizedValues.quantity || undefined,
@@ -712,6 +723,7 @@ export function filterOrders(orders: JobOrder[], filters: OrderFilters) {
       order.jobType,
       order.status,
       order.productionStage,
+      formatDueDisplay(order.dueDate, order.dueText),
       order.resource,
       order.requestedBy,
       order.internalNotes,

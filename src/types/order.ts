@@ -29,7 +29,8 @@ export type JobOrder = {
   productionStage: ProductionStage;
   status: OrderStatus;
   priority: Priority;
-  due: string;
+  dueDate?: string | null;
+  dueText?: string | null;
   itemProjectAsset?: string;
   resource?: string;
   quantity?: string;
@@ -57,7 +58,8 @@ export type OrderFormValues = {
   productionStage: ProductionStage;
   status: OrderStatus;
   priority: Priority;
-  due: string;
+  dueDate: string;
+  dueText: string;
   itemProjectAsset: string;
   resource: string;
   quantity: string;
