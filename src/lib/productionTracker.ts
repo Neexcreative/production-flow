@@ -66,6 +66,15 @@ export type ViewMode = "board" | "list";
 
 type LegacyOrder = Partial<JobOrder> & {
   service?: string;
+  vehicleItem?: string;
+  material?: string;
+  printQuantity?: string;
+  laminationQuantity?: string;
+  fileLink?: string;
+  artworkLink?: string;
+  productionFileLink?: string;
+  notes?: string;
+  referenceImage?: string;
 };
 
 export function createHistoryItem(
@@ -257,21 +266,43 @@ function migrateOrder(order: LegacyOrder, fallbackCreatedAt: string): JobOrder {
     status,
     priority: resolvePriority(order.priority),
     due: resolveText(order.due) || "Pending",
-    vehicleItem: resolveText(order.vehicleItem) || undefined,
-    material: resolveText(order.material) || undefined,
+    itemProjectAsset: resolveText(order.itemProjectAsset ?? order.vehicleItem) || undefined,
+    resource: resolveText(order.resource ?? order.material) || undefined,
     quantity: resolveText(order.quantity) || undefined,
-    printQuantity: resolveText(order.printQuantity) || undefined,
+    outputQuantity:
+      resolveText(order.outputQuantity ?? order.printQuantity) || undefined,
     cutQuantity: resolveText(order.cutQuantity) || undefined,
-    laminationQuantity: resolveText(order.laminationQuantity) || undefined,
+    laminationFinishingQuantity:
+      resolveText(
+        order.laminationFinishingQuantity ?? order.laminationQuantity
+      ) || undefined,
     requestedBy: resolveText(order.requestedBy) || undefined,
     waitingReason:
       status === "Waiting" ? waitingReason || "Waiting Information" : undefined,
-    fileLink: resolveText(order.fileLink) || undefined,
-    artworkLink: resolveText(order.artworkLink) || undefined,
-    productionFileLink: resolveText(order.productionFileLink) || undefined,
-    notes: resolveText(order.notes) || undefined,
-    referenceImage: resolveText(order.referenceImage) || undefined,
-    referenceImageName: resolveText(order.referenceImageName) || undefined,
+    mainFileLink:
+      resolveText(order.mainFileLink ?? order.fileLink) || undefined,
+    artworkDesignLink:
+      resolveText(order.artworkDesignLink ?? order.artworkLink) || undefined,
+    finalProductionLink:
+      resolveText(order.finalProductionLink ?? order.productionFileLink) ||
+      undefined,
+    internalNotes:
+      resolveText(order.internalNotes ?? order.notes) || undefined,
+    referenceUrl:
+      resolveText(
+        order.referenceUrl ??
+          (order.referenceImage &&
+          !order.referenceImage.startsWith("data:image/")
+            ? order.referenceImage
+            : "")
+      ) || undefined,
+    referenceAttachmentUrl:
+      resolveText(
+        order.referenceAttachmentUrl ??
+          (order.referenceImage?.startsWith("data:image/")
+            ? order.referenceImage
+            : "")
+      ) || undefined,
     createdAt,
     updatedAt,
     completedAt,
@@ -463,7 +494,7 @@ export function readStoredMaterials(jobOrders: JobOrder[]) {
   const mergedMaterials = mergeCatalogWithOrders(
     safeMaterials,
     jobOrders,
-    (order) => order.material,
+    (order) => order.resource,
     "resource"
   );
 
@@ -508,24 +539,24 @@ export function buildOrderFormValues(order?: JobOrder): OrderFormValues {
     status: order?.status ?? "New",
     priority: order?.priority ?? "Normal",
     due: order?.due ?? "",
-    vehicleItem: order?.vehicleItem ?? "",
-    material: order?.material ?? "",
+    itemProjectAsset: order?.itemProjectAsset ?? "",
+    resource: order?.resource ?? "",
     quantity: order?.quantity ?? "",
-    printQuantity: order?.printQuantity ?? "",
+    outputQuantity: order?.outputQuantity ?? "",
     cutQuantity: order?.cutQuantity ?? "",
-    laminationQuantity: order?.laminationQuantity ?? "",
+    laminationFinishingQuantity:
+      order?.laminationFinishingQuantity ?? "",
     requestedBy: order?.requestedBy ?? "",
     waitingReason: order?.waitingReason ?? "",
-    fileLink: order?.fileLink ?? "",
-    artworkLink: order?.artworkLink ?? "",
-    productionFileLink: order?.productionFileLink ?? "",
-    notes: order?.notes ?? "",
-    referenceImage: order?.referenceImage ?? "",
-    referenceImageName: order?.referenceImageName ?? "",
-    referenceImageUrl:
-      order?.referenceImage && !order.referenceImage.startsWith("data:image/")
-        ? order.referenceImage
-        : "",
+    mainFileLink: order?.mainFileLink ?? "",
+    artworkDesignLink: order?.artworkDesignLink ?? "",
+    finalProductionLink: order?.finalProductionLink ?? "",
+    internalNotes: order?.internalNotes ?? "",
+    referenceAttachmentUrl: order?.referenceAttachmentUrl ?? "",
+    referenceAttachmentName: order?.referenceAttachmentUrl
+      ? "Reference attachment"
+      : "",
+    referenceUrl: order?.referenceUrl ?? "",
   };
 }
 
@@ -550,21 +581,21 @@ export function sanitizeFormValues(values: OrderFormValues) {
     client: values.client.trim(),
     jobType: values.jobType.trim(),
     due: values.due.trim(),
-    vehicleItem: values.vehicleItem.trim(),
-    material: values.material.trim(),
+    itemProjectAsset: values.itemProjectAsset.trim(),
+    resource: values.resource.trim(),
     quantity: values.quantity.trim(),
-    printQuantity: values.printQuantity.trim(),
+    outputQuantity: values.outputQuantity.trim(),
     cutQuantity: values.cutQuantity.trim(),
-    laminationQuantity: values.laminationQuantity.trim(),
+    laminationFinishingQuantity: values.laminationFinishingQuantity.trim(),
     requestedBy: values.requestedBy.trim(),
     waitingReason: values.waitingReason.trim(),
-    fileLink: values.fileLink.trim(),
-    artworkLink: values.artworkLink.trim(),
-    productionFileLink: values.productionFileLink.trim(),
-    notes: values.notes.trim(),
-    referenceImage: values.referenceImage.trim(),
-    referenceImageName: values.referenceImageName.trim(),
-    referenceImageUrl: values.referenceImageUrl.trim(),
+    mainFileLink: values.mainFileLink.trim(),
+    artworkDesignLink: values.artworkDesignLink.trim(),
+    finalProductionLink: values.finalProductionLink.trim(),
+    internalNotes: values.internalNotes.trim(),
+    referenceAttachmentUrl: values.referenceAttachmentUrl.trim(),
+    referenceAttachmentName: values.referenceAttachmentName.trim(),
+    referenceUrl: values.referenceUrl.trim(),
   };
 }
 
@@ -574,9 +605,6 @@ export function buildOrderFromForm(
 ): JobOrder {
   const now = new Date().toISOString();
   const sanitizedValues = sanitizeFormValues(values);
-  const referenceImage =
-    sanitizedValues.referenceImage || sanitizedValues.referenceImageUrl || "";
-
   const nextStatus = sanitizedValues.status;
   const nextCompletedAt =
     nextStatus === "Done"
@@ -592,28 +620,25 @@ export function buildOrderFromForm(
     status: nextStatus,
     priority: sanitizedValues.priority,
     due: sanitizedValues.due,
-    vehicleItem: sanitizedValues.vehicleItem || undefined,
-    material: sanitizedValues.material || undefined,
+    itemProjectAsset: sanitizedValues.itemProjectAsset || undefined,
+    resource: sanitizedValues.resource || undefined,
     quantity: sanitizedValues.quantity || undefined,
-    printQuantity: sanitizedValues.printQuantity || undefined,
+    outputQuantity: sanitizedValues.outputQuantity || undefined,
     cutQuantity: sanitizedValues.cutQuantity || undefined,
-    laminationQuantity: sanitizedValues.laminationQuantity || undefined,
+    laminationFinishingQuantity:
+      sanitizedValues.laminationFinishingQuantity || undefined,
     requestedBy: sanitizedValues.requestedBy || undefined,
     waitingReason:
       nextStatus === "Waiting"
         ? sanitizedValues.waitingReason || undefined
         : undefined,
-    fileLink: sanitizedValues.fileLink || undefined,
-    artworkLink: sanitizedValues.artworkLink || undefined,
-    productionFileLink: sanitizedValues.productionFileLink || undefined,
-    notes: sanitizedValues.notes || undefined,
-    referenceImage: referenceImage || undefined,
-    referenceImageName:
-      referenceImage && sanitizedValues.referenceImageName
-        ? sanitizedValues.referenceImageName
-        : referenceImage
-          ? "External image URL"
-          : undefined,
+    mainFileLink: sanitizedValues.mainFileLink || undefined,
+    artworkDesignLink: sanitizedValues.artworkDesignLink || undefined,
+    finalProductionLink: sanitizedValues.finalProductionLink || undefined,
+    internalNotes: sanitizedValues.internalNotes || undefined,
+    referenceUrl: sanitizedValues.referenceUrl || undefined,
+    referenceAttachmentUrl:
+      sanitizedValues.referenceAttachmentUrl || undefined,
     createdAt: existingOrder?.createdAt ?? now,
     updatedAt: now,
     completedAt: nextCompletedAt,
@@ -671,7 +696,7 @@ export function filterOrders(orders: JobOrder[], filters: OrderFilters) {
       return false;
     }
 
-    if (filters.material && (order.material ?? "") !== filters.material) {
+    if (filters.material && (order.resource ?? "") !== filters.material) {
       return false;
     }
 
@@ -683,13 +708,13 @@ export function filterOrders(orders: JobOrder[], filters: OrderFilters) {
       order.id,
       order.title,
       order.client,
-      order.vehicleItem,
+      order.itemProjectAsset,
       order.jobType,
       order.status,
       order.productionStage,
-      order.material,
+      order.resource,
       order.requestedBy,
-      order.notes,
+      order.internalNotes,
     ];
 
     return searchableValues.some((value) =>

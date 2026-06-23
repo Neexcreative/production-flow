@@ -113,19 +113,19 @@ export function OrderCard({
         <p>
           <span className="font-semibold text-slate-500">Client:</span> {order.client}
         </p>
-        {order.vehicleItem ? (
+        {order.itemProjectAsset ? (
           <p>
             <span className="font-semibold text-slate-500">Item / Project / Asset:</span>{" "}
-            {order.vehicleItem}
+            {order.itemProjectAsset}
           </p>
         ) : null}
         <p>
           <span className="font-semibold text-slate-500">Due:</span> {order.due}
         </p>
-        {order.material ? (
+        {order.resource ? (
           <p>
             <span className="font-semibold text-slate-500">Resource:</span>{" "}
-            {order.material}
+            {order.resource}
           </p>
         ) : null}
         {order.quantity ? (
@@ -150,7 +150,7 @@ export function OrderCard({
         >
           {order.productionStage}
         </span>
-        {order.referenceImage ? (
+        {order.referenceAttachmentUrl || order.referenceUrl ? (
           <span className="rounded border border-amber-300 bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
             Reference attached
           </span>

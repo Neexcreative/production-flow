@@ -20,19 +20,20 @@ type JobRow = {
   production_stage_id: string | null;
   resource_id: string | null;
   waiting_reason_id: string | null;
-  requester_id: string | null;
-  due_text: string;
-  vehicle_item: string | null;
-  quantity: string | null;
-  print_quantity: string | null;
-  cut_quantity: string | null;
-  lamination_quantity: string | null;
-  file_link: string | null;
-  artwork_link: string | null;
-  production_file_link: string | null;
-  notes: string | null;
-  reference_image: string | null;
-  reference_image_name: string | null;
+  requested_by_id: string | null;
+  due_date: string | null;
+  due_text: string | null;
+  item_project_asset: string | null;
+  quantity: number | string | null;
+  output_quantity: number | string | null;
+  cut_quantity: number | string | null;
+  lamination_finishing_quantity: number | string | null;
+  main_file_link: string | null;
+  artwork_design_link: string | null;
+  final_production_link: string | null;
+  internal_notes: string | null;
+  reference_url: string | null;
+  reference_attachment_url: string | null;
   created_at: string | null;
   updated_at: string | null;
   completed_at: string | null;
@@ -158,6 +159,14 @@ function indexById<T extends { id: string }>(items: T[]) {
   return new Map(items.map((item) => [item.id, item]));
 }
 
+function stringifyNullableValue(value: number | string | null) {
+  if (value === null || value === undefined || value === "") {
+    return undefined;
+  }
+
+  return String(value);
+}
+
 function mapJobRow(
   row: JobRow,
   lookups: {
@@ -182,25 +191,27 @@ function mapJobRow(
         : "Artwork",
     status: row.status_id ? lookups.statuses.get(row.status_id)?.name ?? "New" : "New",
     priority: row.priority_id ? lookups.priorities.get(row.priority_id)?.name ?? "Normal" : "Normal",
-    due: row.due_text,
-    vehicleItem: row.vehicle_item ?? undefined,
-    material: row.resource_id ? lookups.resources.get(row.resource_id)?.name ?? undefined : undefined,
-    quantity: row.quantity ?? undefined,
-    printQuantity: row.print_quantity ?? undefined,
-    cutQuantity: row.cut_quantity ?? undefined,
-    laminationQuantity: row.lamination_quantity ?? undefined,
+    due: row.due_text ?? row.due_date ?? "Pending",
+    itemProjectAsset: row.item_project_asset ?? undefined,
+    resource: row.resource_id ? lookups.resources.get(row.resource_id)?.name ?? undefined : undefined,
+    quantity: stringifyNullableValue(row.quantity),
+    outputQuantity: stringifyNullableValue(row.output_quantity),
+    cutQuantity: stringifyNullableValue(row.cut_quantity),
+    laminationFinishingQuantity: stringifyNullableValue(row.lamination_finishing_quantity),
     requestedBy:
-      row.requester_id ? lookups.requesters.get(row.requester_id)?.name ?? undefined : undefined,
+      row.requested_by_id
+        ? lookups.requesters.get(row.requested_by_id)?.name ?? undefined
+        : undefined,
     waitingReason:
       row.waiting_reason_id
         ? lookups.waitingReasons.get(row.waiting_reason_id)?.name ?? undefined
         : undefined,
-    fileLink: row.file_link ?? undefined,
-    artworkLink: row.artwork_link ?? undefined,
-    productionFileLink: row.production_file_link ?? undefined,
-    notes: row.notes ?? undefined,
-    referenceImage: row.reference_image ?? undefined,
-    referenceImageName: row.reference_image_name ?? undefined,
+    mainFileLink: row.main_file_link ?? undefined,
+    artworkDesignLink: row.artwork_design_link ?? undefined,
+    finalProductionLink: row.final_production_link ?? undefined,
+    internalNotes: row.internal_notes ?? undefined,
+    referenceUrl: row.reference_url ?? undefined,
+    referenceAttachmentUrl: row.reference_attachment_url ?? undefined,
     createdAt: row.created_at ?? undefined,
     updatedAt: row.updated_at ?? undefined,
     completedAt: row.completed_at,

@@ -179,7 +179,7 @@ export async function generateJobPdf(order: JobOrder) {
     ["Priority", getDisplayValue(order.priority)],
     ["Job Type", getDisplayValue(order.jobType)],
     ["Production Stage", getDisplayValue(order.productionStage)],
-    ["Item / Project / Asset", getDisplayValue(order.vehicleItem)],
+    ["Item / Project / Asset", getDisplayValue(order.itemProjectAsset)],
   ];
 
   for (const [label, value] of detailRows) {
@@ -194,13 +194,13 @@ export async function generateJobPdf(order: JobOrder) {
   );
 
   const productionRows: Array<[string, string]> = [
-    ["Material / Main Resource", getDisplayValue(order.material)],
+    ["Material / Main Resource", getDisplayValue(order.resource)],
     ["Quantity", getDisplayValue(order.quantity)],
-    ["Output Quantity", getDisplayValue(order.printQuantity)],
+    ["Output Quantity", getDisplayValue(order.outputQuantity)],
     ["Cut Quantity", getDisplayValue(order.cutQuantity)],
     [
       "Lamination / Finishing Quantity",
-      getDisplayValue(order.laminationQuantity),
+      getDisplayValue(order.laminationFinishingQuantity),
     ],
   ];
 
@@ -218,10 +218,10 @@ export async function generateJobPdf(order: JobOrder) {
   cursorY = drawSectionTitle(doc, "Links and Notes", cursorY + 4, contentWidth);
 
   const linkRows: Array<[string, string]> = [
-    ["Main File Link", getDisplayValue(order.fileLink)],
-    ["Artwork / Design Link", getDisplayValue(order.artworkLink)],
-    ["Final / Production Link", getDisplayValue(order.productionFileLink)],
-    ["Internal Notes", getDisplayValue(order.notes, "No notes added")],
+    ["Main File Link", getDisplayValue(order.mainFileLink)],
+    ["Artwork / Design Link", getDisplayValue(order.artworkDesignLink)],
+    ["Final / Production Link", getDisplayValue(order.finalProductionLink)],
+    ["Internal Notes", getDisplayValue(order.internalNotes, "No notes added")],
   ];
 
   for (const [label, value] of linkRows) {
@@ -231,9 +231,7 @@ export async function generateJobPdf(order: JobOrder) {
   cursorY = drawSectionTitle(doc, "Reference / Attachment", cursorY + 4, contentWidth);
 
   const referenceUrl =
-    order.referenceImage?.trim() && !order.referenceImage.trim().startsWith("data:image/")
-      ? order.referenceImage.trim()
-      : "";
+    order.referenceUrl?.trim() ?? "";
   cursorY = drawFieldRow(
     doc,
     "Reference URL",
@@ -242,8 +240,8 @@ export async function generateJobPdf(order: JobOrder) {
     contentWidth
   );
 
-  const referenceImage = order.referenceImage?.trim()
-    ? await loadImageForPdf(order.referenceImage.trim()).catch(() => null)
+  const referenceImage = order.referenceAttachmentUrl?.trim()
+    ? await loadImageForPdf(order.referenceAttachmentUrl.trim()).catch(() => null)
     : null;
 
   if (referenceImage) {
@@ -270,15 +268,6 @@ export async function generateJobPdf(order: JobOrder) {
     );
     cursorY += imageHeight + 24;
 
-    if (order.referenceImageName?.trim()) {
-      cursorY = drawFieldRow(
-        doc,
-        "Attachment Name",
-        order.referenceImageName.trim(),
-        cursorY,
-        contentWidth
-      );
-    }
     cursorY = drawFieldRow(
       doc,
       "Reference Image Preview",

@@ -51,21 +51,21 @@ export const EMPTY_ORDER_FORM: OrderFormValues = {
   status: "New",
   priority: "Normal",
   due: "",
-  vehicleItem: "",
-  material: "",
+  itemProjectAsset: "",
+  resource: "",
   quantity: "",
-  printQuantity: "",
+  outputQuantity: "",
   cutQuantity: "",
-  laminationQuantity: "",
+  laminationFinishingQuantity: "",
   requestedBy: "",
   waitingReason: "",
-  fileLink: "",
-  artworkLink: "",
-  productionFileLink: "",
-  notes: "",
-  referenceImage: "",
-  referenceImageName: "",
-  referenceImageUrl: "",
+  mainFileLink: "",
+  artworkDesignLink: "",
+  finalProductionLink: "",
+  internalNotes: "",
+  referenceAttachmentUrl: "",
+  referenceAttachmentName: "",
+  referenceUrl: "",
 };
 
 const inputClass =
@@ -75,11 +75,11 @@ const selectClass =
 const labelTextClass = "block text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600";
 
 function getPreviewImage(values: OrderFormValues) {
-  if (values.referenceImage) {
-    return values.referenceImage;
+  if (values.referenceAttachmentUrl) {
+    return values.referenceAttachmentUrl;
   }
 
-  return values.referenceImageUrl.trim();
+  return values.referenceUrl.trim();
 }
 
 function InlineOptionCreator({
@@ -204,9 +204,9 @@ export function OrderFormModal({
     setFileError("");
     setFormValues((current) => ({
       ...current,
-      referenceImage: dataUrl,
-      referenceImageName: file.name,
-      referenceImageUrl: "",
+      referenceAttachmentUrl: dataUrl,
+      referenceAttachmentName: file.name,
+      referenceUrl: "",
     }));
     event.target.value = "";
   }
@@ -214,9 +214,9 @@ export function OrderFormModal({
   function handleReferenceImageUrlChange(value: string) {
     setFormValues((current) => ({
       ...current,
-      referenceImageUrl: value,
-      referenceImage: value ? "" : current.referenceImage,
-      referenceImageName: value ? "" : current.referenceImageName,
+      referenceUrl: value,
+      referenceAttachmentUrl: value ? "" : current.referenceAttachmentUrl,
+      referenceAttachmentName: value ? "" : current.referenceAttachmentName,
     }));
   }
 
@@ -224,9 +224,9 @@ export function OrderFormModal({
     setFileError("");
     setFormValues((current) => ({
       ...current,
-      referenceImage: "",
-      referenceImageName: "",
-      referenceImageUrl: "",
+      referenceAttachmentUrl: "",
+      referenceAttachmentName: "",
+      referenceUrl: "",
     }));
   }
 
@@ -266,7 +266,7 @@ export function OrderFormModal({
 
     setIsAddingMaterial(false);
     setNewMaterialName("");
-    handleChange("material", value);
+    handleChange("resource", value);
   }
 
   function handleRequestedBySelect(value: string) {
@@ -317,7 +317,7 @@ export function OrderFormModal({
         return;
       }
 
-      nextValues.material = result.materialName;
+      nextValues.resource = result.materialName;
     }
 
     if (isAddingRequestedBy) {
@@ -338,11 +338,9 @@ export function OrderFormModal({
 
     nextValues = {
       ...nextValues,
-      referenceImage:
-        nextValues.referenceImage || nextValues.referenceImageUrl.trim(),
-      referenceImageName:
-        nextValues.referenceImageName.trim() ||
-        (nextValues.referenceImageUrl.trim() ? "External image URL" : ""),
+      referenceAttachmentUrl: nextValues.referenceAttachmentUrl,
+      referenceAttachmentName: nextValues.referenceAttachmentName.trim(),
+      referenceUrl: nextValues.referenceUrl.trim(),
     };
 
     await onSubmit(nextValues);
@@ -511,9 +509,9 @@ export function OrderFormModal({
               <label className="space-y-1.5">
                 <span className={labelTextClass}>Item / Project / Asset</span>
                 <input
-                  value={formValues.vehicleItem}
+                  value={formValues.itemProjectAsset}
                   onChange={(event) =>
-                    handleChange("vehicleItem", event.target.value)
+                    handleChange("itemProjectAsset", event.target.value)
                   }
                   className={inputClass}
                   placeholder="Homepage asset set"
@@ -596,7 +594,7 @@ export function OrderFormModal({
               <label className="space-y-1.5">
                 <span className={labelTextClass}>Resource</span>
                 <select
-                  value={isAddingMaterial ? ADD_NEW_MATERIAL_VALUE : formValues.material}
+                  value={isAddingMaterial ? ADD_NEW_MATERIAL_VALUE : formValues.resource}
                   onChange={(event) => handleMaterialSelect(event.target.value)}
                   className={selectClass}
                 >
@@ -625,9 +623,9 @@ export function OrderFormModal({
               <label className="space-y-1.5">
                 <span className={labelTextClass}>Print Quantity</span>
                 <input
-                  value={formValues.printQuantity}
+                  value={formValues.outputQuantity}
                   onChange={(event) =>
-                    handleChange("printQuantity", event.target.value)
+                    handleChange("outputQuantity", event.target.value)
                   }
                   className={inputClass}
                   placeholder="2"
@@ -649,9 +647,9 @@ export function OrderFormModal({
               <label className="space-y-1.5">
                 <span className={labelTextClass}>Lamination Quantity</span>
                 <input
-                  value={formValues.laminationQuantity}
+                  value={formValues.laminationFinishingQuantity}
                   onChange={(event) =>
-                    handleChange("laminationQuantity", event.target.value)
+                    handleChange("laminationFinishingQuantity", event.target.value)
                   }
                   className={inputClass}
                   placeholder="8"
@@ -712,8 +710,8 @@ export function OrderFormModal({
                 <span className={labelTextClass}>File Link</span>
                 <input
                   type="url"
-                  value={formValues.fileLink}
-                  onChange={(event) => handleChange("fileLink", event.target.value)}
+                  value={formValues.mainFileLink}
+                  onChange={(event) => handleChange("mainFileLink", event.target.value)}
                   className={inputClass}
                   placeholder="https://..."
                 />
@@ -723,9 +721,9 @@ export function OrderFormModal({
                 <span className={labelTextClass}>Artwork Link</span>
                 <input
                   type="url"
-                  value={formValues.artworkLink}
+                  value={formValues.artworkDesignLink}
                   onChange={(event) =>
-                    handleChange("artworkLink", event.target.value)
+                    handleChange("artworkDesignLink", event.target.value)
                   }
                   className={inputClass}
                   placeholder="https://..."
@@ -736,9 +734,9 @@ export function OrderFormModal({
                 <span className={labelTextClass}>Production File Link</span>
                 <input
                   type="url"
-                  value={formValues.productionFileLink}
+                  value={formValues.finalProductionLink}
                   onChange={(event) =>
-                    handleChange("productionFileLink", event.target.value)
+                    handleChange("finalProductionLink", event.target.value)
                   }
                   className={inputClass}
                   placeholder="https://..."
@@ -749,8 +747,8 @@ export function OrderFormModal({
                 <span className={labelTextClass}>Notes</span>
                 <textarea
                   rows={5}
-                  value={formValues.notes}
-                  onChange={(event) => handleChange("notes", event.target.value)}
+                  value={formValues.internalNotes}
+                  onChange={(event) => handleChange("internalNotes", event.target.value)}
                   className={inputClass}
                   placeholder="Production notes, pending information, fitting notes, stock notes..."
                 />
@@ -769,7 +767,7 @@ export function OrderFormModal({
                 </p>
               </div>
 
-              {(previewImage || formValues.referenceImageName) && (
+              {(previewImage || formValues.referenceAttachmentName) && (
                 <button
                   type="button"
                   onClick={handleRemoveImage}
@@ -786,7 +784,7 @@ export function OrderFormModal({
                   <span className={labelTextClass}>Reference URL</span>
                   <input
                     type="url"
-                    value={formValues.referenceImageUrl}
+                    value={formValues.referenceUrl}
                     onChange={(event) =>
                       handleReferenceImageUrlChange(event.target.value)
                     }
@@ -805,11 +803,11 @@ export function OrderFormModal({
                   />
                 </label>
 
-                {formValues.referenceImageName ? (
+                {formValues.referenceAttachmentName ? (
                   <p className="text-sm text-slate-600">
                     Current file:{" "}
                     <span className="font-semibold text-slate-900">
-                      {formValues.referenceImageName}
+                      {formValues.referenceAttachmentName}
                     </span>
                   </p>
                 ) : null}

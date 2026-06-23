@@ -69,7 +69,7 @@ export function ArchiveList({ orders, onOpenDetails, onRestore }: ArchiveListPro
                 <span>{order.jobType}</span>
                 <span>{order.productionStage}</span>
                 <span>{order.priority}</span>
-                <span>{order.material || "-"}</span>
+                <span>{order.resource || "-"}</span>
                 <span>{formatDateTime(order.completedAt) || "-"}</span>
                 <span className="flex gap-2">
                   <button

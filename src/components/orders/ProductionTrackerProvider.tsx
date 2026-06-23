@@ -23,6 +23,7 @@ import type {
   OrderStatus,
   PriorityOption,
   StatusOption,
+  SupabaseJobPayload,
 } from "@/types/order";
 import {
   buildBackupFilename,
@@ -132,8 +133,10 @@ function buildReferenceHistory(
   previousOrder?: JobOrder,
   nextOrder?: JobOrder
 ) {
-  const previousImage = previousOrder?.referenceImage ?? "";
-  const nextImage = nextOrder?.referenceImage ?? "";
+  const previousImage =
+    previousOrder?.referenceAttachmentUrl ?? previousOrder?.referenceUrl ?? "";
+  const nextImage =
+    nextOrder?.referenceAttachmentUrl ?? nextOrder?.referenceUrl ?? "";
 
   if (!previousImage && nextImage) {
     return createHistoryItem(orderId, "Attachment added");
@@ -176,6 +179,122 @@ function normalizeSlug(value: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+function parseNullableNumber(value?: string) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  const parsedValue = Number(value);
+
+  return Number.isFinite(parsedValue) ? parsedValue : null;
+}
+
+function normalizeDueValue(value: string) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return { dueDate: null, dueText: null };
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmedValue)) {
+    const parsedDate = new Date(`${trimmedValue}T00:00:00Z`);
+
+    if (!Number.isNaN(parsedDate.getTime()) && parsedDate.toISOString().slice(0, 10) === trimmedValue) {
+      return { dueDate: trimmedValue, dueText: null };
+    }
+  }
+
+  const slashDateMatch = trimmedValue.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+  if (slashDateMatch) {
+    const [, day, month, year] = slashDateMatch;
+    const normalizedDate = `${year}-${month}-${day}`;
+    const parsedDate = new Date(`${normalizedDate}T00:00:00Z`);
+
+    if (
+      !Number.isNaN(parsedDate.getTime()) &&
+      parsedDate.toISOString().slice(0, 10) === normalizedDate
+    ) {
+      return { dueDate: normalizedDate, dueText: null };
+    }
+  }
+
+  return { dueDate: null, dueText: trimmedValue };
+}
+
+function buildReferencePayload(referenceImage?: string) {
+  const trimmedReference = referenceImage?.trim() ?? "";
+
+  if (!trimmedReference) {
+    return {
+      referenceUrl: null,
+      referenceAttachmentUrl: null,
+    };
+  }
+
+  if (trimmedReference.startsWith("data:")) {
+    return {
+      referenceUrl: null,
+      referenceAttachmentUrl: trimmedReference,
+    };
+  }
+
+  return {
+    referenceUrl: trimmedReference,
+    referenceAttachmentUrl: null,
+  };
+}
+
+function buildSupabaseJobPayload(args: {
+  builtOrder: JobOrder;
+  jobNumber: string;
+  clientId: string | null;
+  jobTypeId: string | null;
+  productionStageId: string | null;
+  statusId: string | null;
+  priorityId: string | null;
+  requestedById: string | null;
+  resourceId: string | null;
+  waitingReasonId: string | null;
+  isDone: boolean;
+  now: string;
+}): SupabaseJobPayload {
+  const { dueDate, dueText } = normalizeDueValue(args.builtOrder.due);
+  const { referenceUrl, referenceAttachmentUrl } = buildReferencePayload(
+    args.builtOrder.referenceAttachmentUrl ?? args.builtOrder.referenceUrl
+  );
+
+  return {
+    job_number: args.jobNumber,
+    title: args.builtOrder.title,
+    client_id: args.clientId,
+    job_type_id: args.jobTypeId,
+    production_stage_id: args.productionStageId,
+    status_id: args.statusId,
+    priority_id: args.priorityId,
+    due_date: dueDate,
+    due_text: dueText || null,
+    item_project_asset: args.builtOrder.itemProjectAsset ?? null,
+    requested_by_id: args.requestedById,
+    resource_id: args.resourceId,
+    quantity: parseNullableNumber(args.builtOrder.quantity),
+    output_quantity: parseNullableNumber(args.builtOrder.outputQuantity),
+    cut_quantity: parseNullableNumber(args.builtOrder.cutQuantity),
+    lamination_finishing_quantity: parseNullableNumber(
+      args.builtOrder.laminationFinishingQuantity
+    ),
+    waiting_reason_id: args.waitingReasonId,
+    main_file_link: args.builtOrder.mainFileLink ?? null,
+    artwork_design_link: args.builtOrder.artworkDesignLink ?? null,
+    final_production_link: args.builtOrder.finalProductionLink ?? null,
+    internal_notes: args.builtOrder.internalNotes ?? null,
+    reference_url: referenceUrl,
+    reference_attachment_url: referenceAttachmentUrl,
+    completed_at: args.isDone ? args.builtOrder.completedAt ?? args.now : null,
+    archived_at: null,
+  };
 }
 
 function getFallbackTrackerData() {
@@ -485,48 +604,33 @@ export function ProductionTrackerProvider({
       const jobType = findJobTypeByName(builtOrder.jobType);
       const productionStage = findProductionStageByName(builtOrder.productionStage);
       const client = findClientByName(builtOrder.client);
-      const material = findResourceByName(builtOrder.material);
+      const material = findResourceByName(builtOrder.resource);
       const waitingReason = findWaitingReasonByName(builtOrder.waitingReason);
       const requester = findRequesterByName(builtOrder.requestedBy);
       const now = new Date().toISOString();
       const jobNumber = formMode === "create" ? await getNextSupabaseJobNumber() : editingOrderId!;
-
-      const payload = {
-        job_number: jobNumber,
-        title: builtOrder.title,
-        client_id: client?.id ?? null,
-        status_id: status?.id ?? null,
-        priority_id: priority?.id ?? null,
-        job_type_id: jobType?.id ?? null,
-        production_stage_id: productionStage?.id ?? null,
-        resource_id: material?.id ?? null,
-        waiting_reason_id: waitingReason?.id ?? null,
-        requester_id: requester?.id ?? null,
-        due_text: builtOrder.due,
-        vehicle_item: builtOrder.vehicleItem ?? null,
-        quantity: builtOrder.quantity ?? null,
-        print_quantity: builtOrder.printQuantity ?? null,
-        cut_quantity: builtOrder.cutQuantity ?? null,
-        lamination_quantity: builtOrder.laminationQuantity ?? null,
-        file_link: builtOrder.fileLink ?? null,
-        artwork_link: builtOrder.artworkLink ?? null,
-        production_file_link: builtOrder.productionFileLink ?? null,
-        notes: builtOrder.notes ?? null,
-        reference_image: builtOrder.referenceImage ?? null,
-        reference_image_name: builtOrder.referenceImageName ?? null,
-        updated_at: now,
-        completed_at: status?.isDone ? builtOrder.completedAt ?? now : null,
-        archived_at: null,
-      };
+      const payload = buildSupabaseJobPayload({
+        builtOrder,
+        jobNumber,
+        clientId: client?.id ?? null,
+        jobTypeId: jobType?.id ?? null,
+        productionStageId: productionStage?.id ?? null,
+        statusId: status?.id ?? null,
+        priorityId: priority?.id ?? null,
+        requestedById: requester?.id ?? null,
+        resourceId: material?.id ?? null,
+        waitingReasonId: waitingReason?.id ?? null,
+        isDone: status?.isDone ?? false,
+        now,
+      });
 
       if (formMode === "create") {
-        const { error } = await supabase.from("jobs").insert({
-          ...payload,
-          created_at: now,
-        });
+        const { error } = await supabase.from("jobs").insert(payload);
 
         if (error) {
-          setFormMessage("Unable to save job to Supabase.");
+          console.error("Create job payload:", payload);
+          console.error("Create job Supabase error:", error);
+          setFormMessage("Unable to save job. Check console for database details.");
           return;
         }
 
@@ -538,7 +642,9 @@ export function ProductionTrackerProvider({
           .eq("job_number", editingOrderId!);
 
         if (error) {
-          setFormMessage("Unable to update job in Supabase.");
+          console.error("Edit job payload:", payload);
+          console.error("Edit job Supabase error:", error);
+          setFormMessage("Unable to save job. Check console for database details.");
           return;
         }
 
@@ -614,7 +720,6 @@ export function ProductionTrackerProvider({
         .from("jobs")
         .update({
           status_id: nextStatusRecord?.id ?? null,
-          updated_at: now,
           completed_at: nextStatusRecord?.isDone ? existingOrder.completedAt ?? now : null,
         })
         .eq("job_number", orderId);
@@ -652,7 +757,7 @@ export function ProductionTrackerProvider({
     if (isUsingSupabase && supabase) {
       const { error } = await supabase
         .from("jobs")
-        .update({ archived_at: now, updated_at: now })
+        .update({ archived_at: now })
         .eq("job_number", orderId);
 
       if (error) {
@@ -679,7 +784,7 @@ export function ProductionTrackerProvider({
     if (isUsingSupabase && supabase) {
       const { error } = await supabase
         .from("jobs")
-        .update({ archived_at: null, updated_at: now })
+        .update({ archived_at: null })
         .eq("job_number", orderId);
 
       if (error) {

@@ -99,6 +99,48 @@ Main tables:
 - `waiting_reasons`
 - `requesters`
 
+`jobs` columns:
+
+- `job_number`
+- `title`
+- `client_id`
+- `job_type_id`
+- `production_stage_id`
+- `status_id`
+- `priority_id`
+- `due_date`
+- `due_text`
+- `item_project_asset`
+- `requested_by_id`
+- `resource_id`
+- `quantity`
+- `output_quantity`
+- `cut_quantity`
+- `lamination_finishing_quantity`
+- `waiting_reason_id`
+- `main_file_link`
+- `artwork_design_link`
+- `final_production_link`
+- `internal_notes`
+- `reference_url`
+- `reference_attachment_url`
+- `created_at`
+- `updated_at`
+- `completed_at`
+- `archived_at`
+
+`created_at` and `updated_at` are database-managed timestamps. The app job payload does not manually send them during create or edit.
+
+Do not use legacy `jobs` columns such as:
+
+- `file_link`
+- `artwork_link`
+- `production_file_link`
+- `notes`
+- `reference_image`
+- `print_quantity`
+- `lamination_quantity`
+
 ## Data Source Behavior
 
 When `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set and the connection succeeds:
@@ -409,7 +451,7 @@ Current local storage keys:
 2. Fill in the client, title, due date, priority, and production details.
 3. Move the job through statuses.
 4. Use `Waiting` when the job is blocked.
-5. Add links and notes.
+5. Add links and internal notes.
 6. Export a PDF if needed.
 7. Mark the job complete through the appropriate done status.
 8. Archive it when it is no longer active.

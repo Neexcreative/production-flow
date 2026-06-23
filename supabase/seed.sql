@@ -93,3 +93,7 @@ values
 on conflict (name) do update
 set sort_order = excluded.sort_order,
     is_active = excluded.is_active;
+
+-- Jobs are not seeded here. The application writes jobs using the
+-- requested_by_id, main_file_link, artwork_design_link, final_production_link,
+-- internal_notes, reference_url, and reference_attachment_url schema.

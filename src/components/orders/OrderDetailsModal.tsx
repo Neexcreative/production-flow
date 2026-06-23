@@ -132,7 +132,7 @@ export function OrderDetailsModal({
               <DetailRow label="Client" value={order.client} />
               <DetailRow
                 label="Item / Project / Asset"
-                value={order.vehicleItem || <span className="text-slate-500">Not set</span>}
+                value={order.itemProjectAsset || <span className="text-slate-500">Not set</span>}
               />
               <DetailRow label="Job Type" value={order.jobType} />
               <DetailRow label="Production Stage" value={order.productionStage} />
@@ -150,7 +150,7 @@ export function OrderDetailsModal({
               <DetailRow label="Due" value={order.due} />
               <DetailRow
                 label="Resource"
-                value={order.material || <span className="text-slate-500">Not set</span>}
+                value={order.resource || <span className="text-slate-500">Not set</span>}
               />
               <DetailRow
                 label="Quantity"
@@ -159,7 +159,7 @@ export function OrderDetailsModal({
               <DetailRow
                 label="Print Quantity"
                 value={
-                  order.printQuantity || <span className="text-slate-500">Not set</span>
+                  order.outputQuantity || <span className="text-slate-500">Not set</span>
                 }
               />
               <DetailRow
@@ -169,7 +169,7 @@ export function OrderDetailsModal({
               <DetailRow
                 label="Lamination Quantity"
                 value={
-                  order.laminationQuantity || (
+                  order.laminationFinishingQuantity || (
                     <span className="text-slate-500">Not set</span>
                   )
                 }
@@ -187,14 +187,14 @@ export function OrderDetailsModal({
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <DetailRow label="File Link" value={<LinkValue value={order.fileLink} />} />
+              <DetailRow label="File Link" value={<LinkValue value={order.mainFileLink} />} />
               <DetailRow
                 label="Artwork Link"
-                value={<LinkValue value={order.artworkLink} />}
+                value={<LinkValue value={order.artworkDesignLink} />}
               />
               <DetailRow
                 label="Production File Link"
-                value={<LinkValue value={order.productionFileLink} />}
+                value={<LinkValue value={order.finalProductionLink} />}
               />
               <DetailRow
                 label="Created At"
@@ -213,8 +213,8 @@ export function OrderDetailsModal({
             <DetailRow
               label="Notes"
               value={
-                order.notes ? (
-                  <p className="whitespace-pre-wrap">{order.notes}</p>
+                order.internalNotes ? (
+                  <p className="whitespace-pre-wrap">{order.internalNotes}</p>
                 ) : (
                   <span className="text-slate-500">No notes added</span>
                 )
@@ -255,9 +255,9 @@ export function OrderDetailsModal({
                 Reference / Attachment
               </p>
               <div className="mt-4 flex min-h-72 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-4">
-                {order.referenceImage ? (
+                {order.referenceAttachmentUrl || order.referenceUrl ? (
                   <img
-                    src={order.referenceImage}
+                    src={order.referenceAttachmentUrl ?? order.referenceUrl}
                     alt={`${order.title} reference`}
                     className="max-h-[420px] w-full rounded object-contain"
                   />
@@ -265,12 +265,10 @@ export function OrderDetailsModal({
                   <p className="text-sm text-slate-500">No attachment added</p>
                 )}
               </div>
-              {order.referenceImageName ? (
+              {order.referenceAttachmentUrl ? (
                 <p className="mt-3 text-sm text-slate-600">
                   File:{" "}
-                  <span className="font-semibold text-slate-900">
-                    {order.referenceImageName}
-                  </span>
+                  <span className="font-semibold text-slate-900">Reference attachment</span>
                 </p>
               ) : null}
             </section>

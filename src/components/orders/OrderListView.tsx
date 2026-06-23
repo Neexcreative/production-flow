@@ -72,9 +72,9 @@ export function OrderListView({
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-semibold text-slate-950">{order.title}</div>
-                    {order.vehicleItem ? (
+                    {order.itemProjectAsset ? (
                       <div className="mt-1 text-xs text-slate-500">
-                        Item / Project / Asset: {order.vehicleItem}
+                        Item / Project / Asset: {order.itemProjectAsset}
                       </div>
                     ) : null}
                   </td>
