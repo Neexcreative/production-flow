@@ -14,6 +14,7 @@ Production Flow is an internal job and production control system for tracking ge
 - Jobs report exports
 - Filters
 - Supabase database support
+- Supabase Auth login protection
 - Local fallback when Supabase is not configured
 - Settings page for dropdown data management
 - Client management
@@ -84,8 +85,11 @@ Setup steps:
 2. Open `SQL Editor`.
 3. Run `supabase/schema.sql`.
 4. Run `supabase/seed.sql`.
-5. Confirm the tables exist.
-6. Add the environment variables locally and in deployment.
+5. Confirm the tables, indexes, triggers, grants, and RLS policies were created.
+6. In `Authentication > Providers`, enable `Email`.
+7. Create at least one user in `Authentication > Users`.
+8. Add the environment variables locally and in deployment.
+9. Restart the app after adding the environment variables.
 
 Main tables:
 
@@ -98,6 +102,15 @@ Main tables:
 - `resources`
 - `waiting_reasons`
 - `requesters`
+
+The schema file also creates:
+
+- `updated_at` triggers for all writable tables
+- case-insensitive unique indexes for dropdown-style name fields
+- indexes for common job lookups such as `job_number`, `status_id`, `client_id`, `due_date`, and `archived_at`
+- grants for `authenticated`
+- row-level security policies that allow authenticated users to `select`, `insert`, and `update`
+- revokes for anonymous access on app tables
 
 `jobs` columns:
 
@@ -131,6 +144,34 @@ Main tables:
 
 `created_at` and `updated_at` are database-managed timestamps. The app job payload does not manually send them during create or edit.
 
+Frontend job payload written by the live app:
+
+- `job_number`
+- `title`
+- `client_id`
+- `job_type_id`
+- `production_stage_id`
+- `status_id`
+- `priority_id`
+- `due_date`
+- `due_text`
+- `item_project_asset`
+- `requested_by_id`
+- `resource_id`
+- `quantity`
+- `output_quantity`
+- `cut_quantity`
+- `lamination_finishing_quantity`
+- `waiting_reason_id`
+- `main_file_link`
+- `artwork_design_link`
+- `final_production_link`
+- `internal_notes`
+- `reference_url`
+- `reference_attachment_url`
+- `completed_at`
+- `archived_at`
+
 Do not use legacy `jobs` columns such as:
 
 - `file_link`
@@ -145,17 +186,37 @@ Do not use legacy `jobs` columns such as:
 
 When `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are set and the connection succeeds:
 
+- users must sign in with Supabase Auth before accessing the app
 - jobs load from Supabase
 - dropdown data loads from Supabase
 - create, edit, status changes, archive, restore, reports, and settings all use Supabase
 
 When Supabase is not configured or the connection fails:
 
-- the app falls back to local demo data
-- browser storage is used for fallback records and preferences
-- a warning banner is shown when the database connection fails
+- the login gate shows a setup-required message
+- browser storage is still used for fallback preferences in local-only scenarios
 
 Local storage is no longer the primary job database.
+
+## Login Setup
+
+Production Flow is now protected by Supabase Auth.
+
+Required setup:
+
+1. Open your Supabase project.
+2. Go to `Authentication > Providers`.
+3. Enable `Email`.
+4. Go to `Authentication > Users`.
+5. Create users for each person who should access Production Flow.
+6. Keep using the project `URL` and `anon public` key in `.env.local`.
+
+App behavior:
+
+- unauthenticated users are redirected to `/login`
+- authenticated users can access board, jobs, settings, reports, archive, and TV Mode
+- the header includes a logout button
+- database reads and writes require an authenticated Supabase session
 
 ## Settings
 
@@ -201,6 +262,7 @@ Fields:
 - `notes`
 - `sort_order`
 - `is_active`
+- unique name protection through a case-insensitive index
 
 ### Statuses
 
@@ -305,6 +367,12 @@ Managed in:
 - `Settings > Requesters`
 
 Used in the `Requested By` dropdown.
+
+Fields:
+
+- `name`
+- `sort_order`
+- `is_active`
 
 ## Active vs Deleted Items
 
@@ -444,6 +512,7 @@ Current local storage keys:
 5. Add `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 6. Deploy.
 7. Open the production URL.
+8. Make sure email/password auth is enabled and production users exist in Supabase Auth.
 
 ## Daily Usage Workflow
 
@@ -472,7 +541,10 @@ Check:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- table permissions and policies in Supabase
+- `supabase/schema.sql` was run successfully
+- RLS policies exist for `jobs` and the dropdown tables
+- the signed-in user session is valid
+- the `authenticated` role has `select`, `insert`, and `update` access through RLS
 
 ### Dropdowns are empty
 
@@ -480,6 +552,7 @@ Check:
 
 - `supabase/seed.sql` was executed
 - the relevant table rows have `is_active = true`
+- the signed-in user can read the dropdown tables through RLS
 
 ### Board columns are missing
 
@@ -503,7 +576,8 @@ Check:
 - project URL
 - anon key
 - network access
-- row-level security or permissions
+- email/password auth is enabled
+- row-level security or permissions for the `authenticated` role
 
 ## Generic Product Rule
 

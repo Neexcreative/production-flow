@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
+import { useAuth } from "@/components/auth/AuthProvider";
 import { OrderDetailsModal } from "@/components/orders/OrderDetailsModal";
 import { OrderFormModal } from "@/components/orders/OrderFormModal";
 import { useProductionTracker } from "@/components/orders/ProductionTrackerProvider";
+import { supabase } from "@/lib/supabaseClient";
 
 const navItems = [
   { href: "/", label: "Board" },
@@ -19,6 +21,8 @@ const navItems = [
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isTvMode = pathname === "/tv";
+  const { user } = useAuth();
+  const [isSigningOut, setIsSigningOut] = useState(false);
   const {
     clients,
     statuses,
@@ -48,6 +52,19 @@ export function AppShell({ children }: { children: ReactNode }) {
     dataError,
     exportBackup,
   } = useProductionTracker();
+
+  async function handleSignOut() {
+    if (!supabase || isSigningOut) {
+      return;
+    }
+
+    setIsSigningOut(true);
+    try {
+      await supabase.auth.signOut();
+    } finally {
+      setIsSigningOut(false);
+    }
+  }
 
   return (
     <main className="min-h-screen bg-[linear-gradient(180deg,#eef2f7_0%,#f8fafc_24%,#eef2f7_100%)]">
@@ -88,24 +105,42 @@ export function AppShell({ children }: { children: ReactNode }) {
             </nav>
           </div>
 
-          {!isTvMode ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={exportBackup}
-                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-              >
-                Export Backup
-              </button>
-              <button
-                type="button"
-                onClick={openCreateModal}
-                className="rounded-md border border-amber-300 bg-amber-300 px-4 py-2 text-sm font-bold text-slate-950 shadow-sm transition hover:brightness-105"
-              >
-                + New Job
-              </button>
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <div className="min-w-0 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-right">
+              <p className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                Signed In
+              </p>
+              <p className="truncate text-sm font-semibold text-slate-700">
+                {user?.email ?? "Authenticated user"}
+              </p>
             </div>
-          ) : null}
+            {!isTvMode ? (
+              <>
+                <button
+                  type="button"
+                  onClick={exportBackup}
+                  className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Export Backup
+                </button>
+                <button
+                  type="button"
+                  onClick={openCreateModal}
+                  className="rounded-md border border-amber-300 bg-amber-300 px-4 py-2 text-sm font-bold text-slate-950 shadow-sm transition hover:brightness-105"
+                >
+                  + New Job
+                </button>
+              </>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => void handleSignOut()}
+              disabled={isSigningOut}
+              className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isSigningOut ? "Signing Out..." : "Logout"}
+            </button>
+          </div>
         </div>
       </header>
 

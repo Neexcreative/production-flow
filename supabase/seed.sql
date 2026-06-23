@@ -1,3 +1,5 @@
+begin;
+
 insert into statuses (name, slug, color, sort_order, is_board_column, is_done, is_active)
 values
   ('New', 'new', '#0f172a', 1, true, false, true),
@@ -94,6 +96,7 @@ on conflict (name) do update
 set sort_order = excluded.sort_order,
     is_active = excluded.is_active;
 
--- Jobs are not seeded here. The application writes jobs using the
--- requested_by_id, main_file_link, artwork_design_link, final_production_link,
--- internal_notes, reference_url, and reference_attachment_url schema.
+-- Jobs are intentionally not seeded. The app creates them through the
+-- frontend Supabase client using the live jobs payload schema.
+
+commit;

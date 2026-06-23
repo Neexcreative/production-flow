@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 
-import { AppShell } from "@/components/layout/AppShell";
-import { ProductionTrackerProvider } from "@/components/orders/ProductionTrackerProvider";
+import { AuthenticatedAppFrame } from "@/components/auth/AuthenticatedAppFrame";
+import { AuthGate } from "@/components/auth/AuthGate";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,9 +18,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full">
-        <ProductionTrackerProvider>
-          <AppShell>{children}</AppShell>
-        </ProductionTrackerProvider>
+        <AuthProvider>
+          <AuthGate>
+            <AuthenticatedAppFrame>{children}</AuthenticatedAppFrame>
+          </AuthGate>
+        </AuthProvider>
       </body>
     </html>
   );
