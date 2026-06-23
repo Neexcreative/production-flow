@@ -20,7 +20,7 @@ import {
   type Priority,
   type ProductionStage,
 } from "@/types/order";
-import { formatDueDisplay, normalizeDueDateInput } from "@/utils/date";
+import { formatDateForDisplay, normalizeDueDateInput } from "@/utils/date";
 
 export const ORDERS_STORAGE_KEY = "productionFlowJobs";
 export const HISTORY_STORAGE_KEY = "productionFlowHistory";
@@ -547,7 +547,7 @@ export function buildOrderFormValues(order?: JobOrder): OrderFormValues {
     status: order?.status ?? "New",
     priority: order?.priority ?? "Normal",
     dueDate: order?.dueDate ?? "",
-    dueText: order?.dueText ?? "",
+    dueText: "",
     itemProjectAsset: order?.itemProjectAsset ?? "",
     resource: order?.resource ?? "",
     quantity: order?.quantity ?? "",
@@ -590,7 +590,7 @@ export function sanitizeFormValues(values: OrderFormValues) {
     client: values.client.trim(),
     jobType: values.jobType.trim(),
     dueDate: values.dueDate.trim(),
-    dueText: values.dueText.trim(),
+    dueText: "",
     itemProjectAsset: values.itemProjectAsset.trim(),
     resource: values.resource.trim(),
     quantity: values.quantity.trim(),
@@ -630,7 +630,7 @@ export function buildOrderFromForm(
     status: nextStatus,
     priority: sanitizedValues.priority,
     dueDate: sanitizedValues.dueDate || null,
-    dueText: sanitizedValues.dueText || null,
+    dueText: null,
     itemProjectAsset: sanitizedValues.itemProjectAsset || undefined,
     resource: sanitizedValues.resource || undefined,
     quantity: sanitizedValues.quantity || undefined,
@@ -723,7 +723,7 @@ export function filterOrders(orders: JobOrder[], filters: OrderFilters) {
       order.jobType,
       order.status,
       order.productionStage,
-      formatDueDisplay(order.dueDate, order.dueText),
+      formatDateForDisplay(order.dueDate),
       order.resource,
       order.requestedBy,
       order.internalNotes,

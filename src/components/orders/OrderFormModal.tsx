@@ -154,7 +154,6 @@ export function OrderFormModal({
   const [newRequestedByName, setNewRequestedByName] = useState("");
   const [requestedByError, setRequestedByError] = useState("");
   const [waitingReasonError, setWaitingReasonError] = useState("");
-  const [dueError, setDueError] = useState("");
   const [fileError, setFileError] = useState("");
 
   function handleChange<K extends keyof OrderFormValues>(
@@ -174,9 +173,6 @@ export function OrderFormModal({
       setWaitingReasonError("");
     }
 
-    if (field === "dueDate" || field === "dueText") {
-      setDueError("");
-    }
   }
 
   async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -343,13 +339,9 @@ export function OrderFormModal({
       return;
     }
 
-    if (!nextValues.dueDate.trim() && !nextValues.dueText.trim()) {
-      setDueError("Please select an exact date or choose Today, Pending or Done.");
-      return;
-    }
-
     nextValues = {
       ...nextValues,
+      dueText: "",
       referenceAttachmentUrl: nextValues.referenceAttachmentUrl,
       referenceAttachmentName: nextValues.referenceAttachmentName.trim(),
       referenceUrl: nextValues.referenceUrl.trim(),
@@ -508,13 +500,11 @@ export function OrderFormModal({
               </label>
 
               <DatePickerField
-                label="Due Date / Due Text"
+                label="Due Date"
                 value={formValues.dueDate || null}
-                dueText={formValues.dueText || null}
-                error={dueError}
-                onChange={({ dueDate, dueText }) => {
+                onChange={({ dueDate }) => {
                   handleChange("dueDate", dueDate ?? "");
-                  handleChange("dueText", dueText ?? "");
+                  handleChange("dueText", "");
                 }}
               />
 

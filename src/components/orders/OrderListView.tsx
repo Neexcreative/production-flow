@@ -3,7 +3,7 @@
 import { formatDateTime } from "@/lib/productionTracker";
 import type { JobOrder, OrderStatus, StatusOption } from "@/types/order";
 import { generateJobPdf } from "@/utils/generateJobPdf";
-import { formatDueDisplay } from "@/utils/date";
+import { formatDateForDisplay } from "@/utils/date";
 
 type OrderListViewProps = {
   orders: JobOrder[];
@@ -50,7 +50,7 @@ export function OrderListView({
               <th className="px-4 py-3 font-semibold">Priority</th>
               <th className="px-4 py-3 font-semibold">Job Type</th>
               <th className="px-4 py-3 font-semibold">Production Stage</th>
-              <th className="px-4 py-3 font-semibold">Due Date / Due Text</th>
+              <th className="px-4 py-3 font-semibold">Due Date</th>
               <th className="px-4 py-3 font-semibold">Updated At</th>
               <th className="px-4 py-3 font-semibold">Actions</th>
             </tr>
@@ -68,7 +68,7 @@ export function OrderListView({
             ) : (
               orders.map((order) => {
                 const dueDisplay =
-                  formatDueDisplay(order.dueDate, order.dueText) || "Not set";
+                  formatDateForDisplay(order.dueDate) || "Select due date";
 
                 return (
                 <tr key={order.id} className="border-t border-slate-200 align-top">

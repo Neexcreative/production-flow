@@ -1,6 +1,6 @@
 import type { JobOrder, OrderStatus, StatusOption } from "@/types/order";
 import { generateJobPdf } from "@/utils/generateJobPdf";
-import { formatDueDisplay } from "@/utils/date";
+import { formatDateForDisplay } from "@/utils/date";
 
 function getPriorityBadge(priority: string) {
   if (priority === "High") {
@@ -79,7 +79,7 @@ export function OrderCard({
   }
 
   const isWaiting = order.status === "Waiting";
-  const dueDisplay = formatDueDisplay(order.dueDate, order.dueText) || "Not set";
+  const dueDisplay = formatDateForDisplay(order.dueDate) || "Select due date";
 
   return (
     <article

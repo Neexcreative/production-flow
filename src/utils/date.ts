@@ -5,6 +5,10 @@ export function toISODate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+export function formatDateForSupabase(date: Date): string {
+  return toISODate(date);
+}
+
 export function parseISODate(value: string | null | undefined): Date | null {
   if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return null;
@@ -18,40 +22,6 @@ export function parseISODate(value: string | null | undefined): Date | null {
   }
 
   return date;
-}
-
-export function getTodayISO(): string {
-  return toISODate(new Date());
-}
-
-export function addDaysISO(days: number, from = new Date()): string {
-  const date = new Date(from);
-  date.setDate(date.getDate() + days);
-  return toISODate(date);
-}
-
-function normalizeDueText(value?: string | null) {
-  const trimmedValue = value?.trim();
-
-  if (!trimmedValue) {
-    return null;
-  }
-
-  const normalizedValue = trimmedValue.toLowerCase();
-
-  if (normalizedValue === "today") {
-    return "Today";
-  }
-
-  if (normalizedValue === "pending") {
-    return "Pending";
-  }
-
-  if (normalizedValue === "done") {
-    return "Done";
-  }
-
-  return trimmedValue;
 }
 
 function parseSlashDate(value: string) {
@@ -78,44 +48,36 @@ function parseFriendlyDate(value: string) {
   return toISODate(parsedDate);
 }
 
+export function parseDisplayDate(displayDate: string | null | undefined) {
+  if (!displayDate) {
+    return null;
+  }
+
+  const match = displayDate.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+  if (!match) {
+    return null;
+  }
+
+  const [, month, day, year] = match;
+  const isoDate = `${year}-${month}-${day}`;
+
+  return parseISODate(isoDate) ? isoDate : null;
+}
+
 export function normalizeDueDateInput(input: {
   dueDate?: string | null;
   dueText?: string | null;
   due?: string | null;
 }) {
-  const normalizedDueText = normalizeDueText(input.dueText);
-
-  if (normalizedDueText === "Pending" || normalizedDueText === "Done") {
-    return { dueDate: null, dueText: normalizedDueText };
-  }
-
-  if (normalizedDueText === "Today") {
-    return {
-      dueDate: parseISODate(input.dueDate ?? null)
-        ? input.dueDate ?? getTodayISO()
-        : getTodayISO(),
-      dueText: "Today",
-    };
-  }
-
   if (parseISODate(input.dueDate ?? null)) {
-    return { dueDate: input.dueDate ?? null, dueText: normalizedDueText };
+    return { dueDate: input.dueDate ?? null, dueText: null };
   }
 
   const legacyDue = input.due?.trim();
 
   if (!legacyDue) {
-    return { dueDate: null, dueText: normalizedDueText };
-  }
-
-  const normalizedLegacyDueText = normalizeDueText(legacyDue);
-
-  if (
-    normalizedLegacyDueText === "Today" ||
-    normalizedLegacyDueText === "Pending" ||
-    normalizedLegacyDueText === "Done"
-  ) {
-    return normalizeDueDateInput({ dueText: normalizedLegacyDueText });
+    return { dueDate: null, dueText: null };
   }
 
   const slashDate = parseSlashDate(legacyDue);
@@ -136,28 +98,19 @@ export function normalizeDueDateInput(input: {
     return { dueDate: friendlyDate, dueText: null };
   }
 
-  return { dueDate: null, dueText: legacyDue };
+  return { dueDate: null, dueText: null };
 }
 
-export function formatDueDisplay(
-  dueDate: string | null | undefined,
-  dueText: string | null | undefined
-) {
-  const normalizedDueText = normalizeDueText(dueText);
-
-  if (normalizedDueText) {
-    return normalizedDueText;
-  }
-
+export function formatDateForDisplay(dueDate: string | null | undefined) {
   const parsedDate = parseISODate(dueDate);
 
   if (!parsedDate) {
     return "";
   }
 
-  return parsedDate.toLocaleDateString("en-IE", {
+  return parsedDate.toLocaleDateString("en-US", {
+    month: "2-digit",
     day: "2-digit",
-    month: "short",
     year: "numeric",
   });
 }

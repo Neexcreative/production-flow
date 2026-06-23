@@ -13,7 +13,7 @@ import type {
   StatusOption,
 } from "@/types/order";
 import { generateJobPdf } from "@/utils/generateJobPdf";
-import { formatDueDisplay } from "@/utils/date";
+import { formatDateForDisplay } from "@/utils/date";
 
 function getPriorityBadge(priority: string) {
   if (priority === "High") {
@@ -74,7 +74,7 @@ export function OrderDetailsModal({
   availableStatuses,
   readOnly = false,
 }: OrderDetailsModalProps) {
-  const dueDisplay = formatDueDisplay(order.dueDate, order.dueText) || "Not set";
+  const dueDisplay = formatDateForDisplay(order.dueDate) || "Select due date";
 
   async function handleDownloadPdf() {
     try {

@@ -4,7 +4,7 @@ import type {
   Priority,
   ProductionStage,
 } from "@/types/order";
-import { formatDueDisplay, parseISODate } from "@/utils/date";
+import { formatDateForDisplay, parseISODate } from "@/utils/date";
 
 export type ReportFilters = {
   dateFrom: string;
@@ -77,9 +77,7 @@ export function isOverdue(order: JobOrder, now = new Date()) {
     return false;
   }
 
-  const dueDate =
-    parseISODate(order.dueDate ?? null) ??
-    (order.dueText === "Today" ? endOfDay(now) : null);
+  const dueDate = parseISODate(order.dueDate ?? null);
 
   if (!dueDate) {
     return false;
@@ -164,7 +162,7 @@ export function buildReportRows(orders: JobOrder[]): ReportRow[] {
     priority: order.priority,
     jobType: order.jobType,
     productionStage: order.productionStage,
-    dueDate: formatDueDisplay(order.dueDate, order.dueText) || "Not set",
+    dueDate: formatDateForDisplay(order.dueDate) || "Select due date",
     completedDate: formatReportDate(order.completedAt) || "",
   }));
 }

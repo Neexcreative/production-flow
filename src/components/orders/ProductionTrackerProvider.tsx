@@ -241,7 +241,7 @@ function buildSupabaseJobPayload(args: {
     status_id: args.statusId,
     priority_id: args.priorityId,
     due_date: args.builtOrder.dueDate ?? null,
-    due_text: args.builtOrder.dueText ?? null,
+    due_text: null,
     item_project_asset: args.builtOrder.itemProjectAsset ?? null,
     requested_by_id: args.requestedById,
     resource_id: args.resourceId,

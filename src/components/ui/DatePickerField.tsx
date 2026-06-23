@@ -3,17 +3,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
-  addDaysISO,
-  formatDueDisplay,
-  getTodayISO,
+  formatDateForDisplay,
+  formatDateForSupabase,
   parseISODate,
   toISODate,
 } from "@/utils/date";
 
 type DatePickerFieldProps = {
   value: string | null;
-  dueText: string | null;
-  onChange: (value: { dueDate: string | null; dueText: string | null }) => void;
+  onChange: (value: { dueDate: string | null; dueText: null }) => void;
   label?: string;
   placeholder?: string;
   disabled?: boolean;
@@ -50,29 +48,8 @@ function buildCalendarDays(visibleMonth: Date) {
   });
 }
 
-function getSelectionMode(value: string | null, dueText: string | null) {
-  if (dueText === "Pending") {
-    return "Pending";
-  }
-
-  if (dueText === "Done") {
-    return "Done";
-  }
-
-  if (dueText === "Today") {
-    return "Today";
-  }
-
-  if (value) {
-    return "Exact date";
-  }
-
-  return "Exact date";
-}
-
 export function DatePickerField({
   value,
-  dueText,
   onChange,
   label = "Due Date",
   placeholder = "Select due date",
@@ -90,8 +67,7 @@ export function DatePickerField({
     () => buildCalendarDays(visibleMonth),
     [visibleMonth]
   );
-  const selectionMode = getSelectionMode(value, dueText);
-  const displayValue = formatDueDisplay(value, dueText) || placeholder;
+  const displayValue = formatDateForDisplay(value) || placeholder;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -115,71 +91,12 @@ export function DatePickerField({
     };
   }, []);
 
-  function setDueValue(nextValue: { dueDate: string | null; dueText: string | null }) {
+  function setDueValue(nextValue: { dueDate: string | null; dueText: null }) {
     onChange(nextValue);
   }
 
-  function handleModeChange(nextMode: string) {
-    if (nextMode === "Today") {
-      setDueValue({ dueDate: getTodayISO(), dueText: "Today" });
-      return;
-    }
-
-    if (nextMode === "Pending") {
-      setDueValue({ dueDate: null, dueText: "Pending" });
-      return;
-    }
-
-    if (nextMode === "Done") {
-      setDueValue({ dueDate: null, dueText: "Done" });
-      return;
-    }
-
-    setDueValue({ dueDate: value, dueText: null });
-  }
-
   function handleDateSelect(date: Date) {
-    setDueValue({ dueDate: toISODate(date), dueText: null });
-    setIsOpen(false);
-  }
-
-  function applyQuickOption(option: "today" | "tomorrow" | "nextWeek" | "pending" | "done" | "clear") {
-    if (option === "today") {
-      setDueValue({ dueDate: getTodayISO(), dueText: "Today" });
-      setVisibleMonth(new Date());
-      setIsOpen(false);
-      return;
-    }
-
-    if (option === "tomorrow") {
-      const isoDate = addDaysISO(1);
-      setDueValue({ dueDate: isoDate, dueText: null });
-      setVisibleMonth(parseISODate(isoDate) ?? new Date());
-      setIsOpen(false);
-      return;
-    }
-
-    if (option === "nextWeek") {
-      const isoDate = addDaysISO(7);
-      setDueValue({ dueDate: isoDate, dueText: null });
-      setVisibleMonth(parseISODate(isoDate) ?? new Date());
-      setIsOpen(false);
-      return;
-    }
-
-    if (option === "pending") {
-      setDueValue({ dueDate: null, dueText: "Pending" });
-      setIsOpen(false);
-      return;
-    }
-
-    if (option === "done") {
-      setDueValue({ dueDate: null, dueText: "Done" });
-      setIsOpen(false);
-      return;
-    }
-
-    setDueValue({ dueDate: null, dueText: null });
+    setDueValue({ dueDate: formatDateForSupabase(date), dueText: null });
     setIsOpen(false);
   }
 
@@ -188,96 +105,33 @@ export function DatePickerField({
       <span className="block text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">
         {label}
       </span>
-      <div className="grid gap-3 sm:grid-cols-[160px_minmax(0,1fr)]">
-        <select
-          value={selectionMode}
-          onChange={(event) => handleModeChange(event.target.value)}
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => {
+            if (disabled) {
+              return;
+            }
+
+            setVisibleMonth(selectedDate ?? new Date());
+            setIsOpen((current) => !current);
+          }}
           disabled={disabled}
+          aria-label="Open due date picker"
           className={[
-            "h-11 rounded-md border border-slate-300 bg-white px-3.5 text-sm text-slate-900 outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-200",
+            buttonClass,
+            displayValue === placeholder ? "text-slate-400" : "",
             error ? "border-red-400 ring-2 ring-red-100" : "",
+            disabled ? "cursor-not-allowed opacity-60" : "",
           ].join(" ")}
         >
-          <option>Exact date</option>
-          <option>Today</option>
-          <option>Pending</option>
-          <option>Done</option>
-        </select>
+          <span>{displayValue}</span>
+          <span className="text-xs font-semibold text-slate-500">Calendar</span>
+        </button>
 
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => {
-              if (disabled) {
-                return;
-              }
-
-              setVisibleMonth(selectedDate ?? new Date());
-              setIsOpen((current) => !current);
-            }}
-            disabled={disabled}
-            aria-label="Open due date picker"
-            className={[
-              buttonClass,
-              displayValue === placeholder ? "text-slate-400" : "",
-              error ? "border-red-400 ring-2 ring-red-100" : "",
-              disabled ? "cursor-not-allowed opacity-60" : "",
-            ].join(" ")}
-          >
-            <span>{displayValue}</span>
-            <span className="text-xs font-semibold text-slate-500">
-              {selectionMode === "Exact date" ? "Calendar" : selectionMode}
-            </span>
-          </button>
-
-          {isOpen ? (
-            <div className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-[min(92vw,360px)] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_24px_40px_-24px_rgba(15,23,42,0.45)]">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => applyQuickOption("today")}
-                  className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-amber-50 hover:border-amber-300"
-                >
-                  Today
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyQuickOption("tomorrow")}
-                  className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-amber-50 hover:border-amber-300"
-                >
-                  Tomorrow
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyQuickOption("nextWeek")}
-                  className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-amber-50 hover:border-amber-300"
-                >
-                  Next week
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyQuickOption("pending")}
-                  className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-amber-50 hover:border-amber-300"
-                >
-                  Pending
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyQuickOption("done")}
-                  className="rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-amber-50 hover:border-amber-300"
-                >
-                  Done
-                </button>
-                <button
-                  type="button"
-                  onClick={() => applyQuickOption("clear")}
-                  className="rounded-full border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
-                >
-                  Clear
-                </button>
-              </div>
-
-              <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+        {isOpen ? (
+          <div className="absolute left-0 top-[calc(100%+0.5rem)] z-30 w-[min(92vw,360px)] rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_24px_40px_-24px_rgba(15,23,42,0.45)]">
+            <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <button
                     type="button"
@@ -355,10 +209,9 @@ export function DatePickerField({
                     );
                   })}
                 </div>
-              </div>
             </div>
-          ) : null}
-        </div>
+          </div>
+        ) : null}
       </div>
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
     </div>

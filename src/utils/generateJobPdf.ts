@@ -2,7 +2,7 @@ import { jsPDF } from "jspdf";
 
 import { formatDateTime } from "@/lib/productionTracker";
 import type { JobOrder } from "@/types/order";
-import { formatDueDisplay } from "@/utils/date";
+import { formatDateForDisplay } from "@/utils/date";
 
 const PAGE_MARGIN = 40;
 const FOOTER_HEIGHT = 28;
@@ -139,7 +139,7 @@ export async function generateJobPdf(order: JobOrder) {
   const pageWidth = doc.internal.pageSize.getWidth();
   const contentWidth = pageWidth - PAGE_MARGIN * 2;
   const generatedAt = formatDateTime(new Date().toISOString());
-  const dueDisplay = formatDueDisplay(order.dueDate, order.dueText) || "Pending";
+  const dueDisplay = formatDateForDisplay(order.dueDate) || "Select due date";
   let cursorY = PAGE_MARGIN;
 
   doc.setFont("helvetica", "bold");
@@ -176,7 +176,7 @@ export async function generateJobPdf(order: JobOrder) {
     ["Job Title", getDisplayValue(order.title)],
     ["Client", getDisplayValue(order.client)],
     ["Requested By", getDisplayValue(order.requestedBy)],
-    ["Due Date / Due Text", getDisplayValue(dueDisplay, "Pending")],
+    ["Due Date", getDisplayValue(dueDisplay, "Select due date")],
     ["Status", getDisplayValue(order.status)],
     ["Priority", getDisplayValue(order.priority)],
     ["Job Type", getDisplayValue(order.jobType)],
